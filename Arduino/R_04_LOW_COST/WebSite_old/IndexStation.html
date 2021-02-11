@@ -1,0 +1,114 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>R-04 Low cost</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+<script>
+let d = document;
+let timerId;
+let intervalTime =1000;
+
+function getParameters(){
+  let reqGetParameters = new XMLHttpRequest();
+  reqGetParameters.open("GET","R_04.parameters?=",true);
+  reqGetParameters.timeout = 5000;
+  reqGetParameters.onreadystatechange = function(){
+    if(reqGetParameters.readyState != 4)return;
+    if(reqGetParameters.status != 200){
+	  clearInterval(timerId);
+	  intervalTime=8000;
+	  timerId = setInterval(getParameters,intervalTime);
+      //alert(reqGetParameters.status==0?"Timeout":reqGetParameters.statusText);
+    }else{
+	  if(intervalTime==8000){
+	    clearInterval(timerId);
+	    intervalTime=1000;
+		timerId = setInterval(getParameters,intervalTime);
+	  }
+	  let parameters = JSON.parse (reqGetParameters.response);
+      d.getElementById('A_IN_1').innerHTML = parameters.A_IN_1;
+      d.getElementById('D_IN_1').innerHTML = parameters.D_IN_1;
+      d.getElementById('D_IN_2').innerHTML = parameters.D_IN_2;
+      d.getElementById('D_IN_3').innerHTML = parameters.D_IN_3;
+      d.getElementById('D_IN_4').innerHTML = parameters.D_IN_4;
+      d.getElementById('D_OUT_1').innerHTML = parameters.D_OUT_1;
+      d.getElementById('D_OUT_1_Formula').value = parameters.Formula;
+	}
+  }
+  
+  try{
+    reqGetParameters.send(null);
+  }
+  catch(exception){
+    clearInterval(timerId);
+	intervalTime=8000;
+	timerId = setInterval(getParameters,intervalTime);
+  }
+}
+
+function saveFormula(){
+
+}
+
+function rebootDevice(){
+  let reqRebootDevice = new XMLHttpRequest();
+  reqRebootDevice.open("GET","R_04.reboot=1",true);
+  reqRebootDevice.timeout = 5000;
+  reqRebootDevice.onreadystatechange = function(){
+    if(reqRebootDevice.readyState != 4)return;
+    if(reqRebootDevice.status != 200){
+	  alert(reqRebootDevice.status==0?"Reboot cmd timeout":reqRebootDevice.statusText);
+    }else{
+	  alert("Device was rebooted successfully.");
+	}
+  }
+  try{
+    reqRebootDevice.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function onMainPageLoad(){
+d.getElementById('A_IN_1').innerHTML="0.000";
+d.getElementById('D_IN_1').innerHTML="0";
+d.getElementById('D_IN_2').innerHTML="0";
+d.getElementById('D_IN_3').innerHTML="0";
+d.getElementById('D_IN_4').innerHTML="0";
+d.getElementById('D_OUT_1').innerHTML="0";
+d.getElementById('D_OUT_1_Formula').value="10";
+
+timerId = setInterval(getParameters,intervalTime);
+/*clearInterval(timerId)*/
+}
+</script>
+</head>
+<body onload="onMainPageLoad()">
+<div id="header"><h1>R-04 Low cost</h1></div>
+<div class="block">
+<h3>Analog input</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="80%" >A_IN_1</td><td id="A_IN_1"></tr>
+</table>
+<h3>Digital inputs</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="80%">D_IN_1</td><td id="D_IN_1" ></tr>
+<tr><td width="80%">D_IN_2</td><td id="D_IN_2" ></tr>
+<tr><td width="80%">D_IN_3</td><td id="D_IN_3" ></tr>
+<tr><td width="80%">D_IN_4</td><td id="D_IN_4" ></tr>
+</table>
+<h3>Digital output</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="80%">D_OUT_1</td><td id="D_OUT_1" ></tr>
+</table><h3>Digital output state formula</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td><input id="D_OUT_1_Formula" type="text" size = 39 font-weight ></td></tr>
+</table>
+<table class = "tableButtons" align="center">
+<tr><th width="225"><input type="button" value = "Save formula" onclick="saveFormula()"></th><th width="255"><input type="button" value = "Reboot device" onclick="rebootDevice()"></th></tr>
+</table>
+</div>
+</body>
+</html>

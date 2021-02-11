@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>R-04 Low cost</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+<script>
+let d = document;
+let timerId;
+let intervalTime =1000;
+
+function checkFloat(arg_id){
+  let element = d.getElementById(arg_id);
+  let num = parseFloat(element.value);
+  if(num != num){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+  return false;
+  }else{
+    if(!element.value.endsWith('.')) element.value = num;
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+  return true;
+  }
+}
+
+function checkSSID(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkPASSWORD(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkFormula(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+  return true;
+}
+
+function checkSettings(){
+  let result = true;
+  result &= checkSSID('SSID');
+  result &= checkPASSWORD('PASSWORD');
+  result &= checkFloat('AInCoef');
+  result &= checkFormula('D_OUT_1_Formula');
+  return result;
+}
+
+function getSettings(){
+  let reqGetSettings = new XMLHttpRequest();
+  reqGetSettings.open("GET","R_04.settings?=",true);
+  reqGetSettings.timeout = 5000;
+  reqGetSettings.onreadystatechange = function(){
+    if(reqGetSettings.readyState != 4)return;
+    if(reqGetSettings.status != 200){
+	  alert(reqGetSettings.status==0?"Read settings timeout":reqGetSettings.statusText);
+    }else{
+	  let settings = JSON.parse (reqGetSettings.response);
+      d.getElementById('SSID').value = settings.SSID;
+      d.getElementById('PASSWORD').value = settings.PASSWORD;
+      d.getElementById('AInCoef').value = settings.AInCoef;
+      d.getElementById('D_OUT_1_Formula').value = settings.Formula;
+	}
+  }
+  try{
+    reqGetSettings.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function saveSettings(){
+  if(!checkSettings()){
+    alert("Settings input error.");
+	return;
+  }
+  
+  let settings ={
+    SSID: d.getElementById("SSID").value,
+    PASSWORD: d.getElementById("PASSWORD").value,
+    AInCoef: d.getElementById("AInCoef").value,
+    Formula: d.getElementById("D_OUT_1_Formula").value,
+  };
+  
+  let reqGetSettings = new XMLHttpRequest();
+  reqGetSettings.open("GET","R_04.settings="+ JSON.stringify(settings),true);
+  reqGetSettings.timeout = 5000;
+  reqGetSettings.onreadystatechange = function(){
+    if(reqGetSettings.readyState != 4)return;
+    if(reqGetSettings.status != 200){
+	  alert(reqGetSettings.status==0?"Read settings timeout":reqGetSettings.statusText);
+    }else{
+	  alert("Settings were writed successfully.");
+	}
+  }
+  try{
+    reqGetSettings.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function rebootDevice(){
+  let reqRebootDevice = new XMLHttpRequest();
+  reqRebootDevice.open("GET","R_04.reboot=1",true);
+  reqRebootDevice.timeout = 5000;
+  reqRebootDevice.onreadystatechange = function(){
+    if(reqRebootDevice.readyState != 4)return;
+    if(reqRebootDevice.status != 200){
+	  alert(reqRebootDevice.status==0?"Reboot cmd timeout":reqRebootDevice.statusText);
+    }else{
+	  alert("Device was rebooted successfully.");
+	}
+  }
+  try{
+    reqRebootDevice.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function onMainPageLoad(){
+  getSettings();
+}
+</script>
+</head>
+<body onload="onMainPageLoad()">
+<div id="header"><h1>R-04 Low cost</h1></div>
+<div class="block">
+<h3>Station network parameters</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="60%">SSID</td><td align="center"><input id="SSID" type="text" oninput ="checkSSID('SSID')"></td></tr>
+<tr><td width="60%">PASSWORD</td><td align="center"><input id="PASSWORD" type="text" oninput ="checkPASSWORD('PASSWORD')"></td></tr>
+</table>
+<h3>Analog input</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="70%" >Analog input coefficient</td><td align="center"><input id="AInCoef" type="text" size = 12 oninput="checkFloat('AInCoef')"></td></tr>
+</table>
+<h3>Digital output state formula</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td><input id="D_OUT_1_Formula" type="text" size = 39 oninput="checkFormula('D_OUT_1_Formula')"></td></tr>
+</table>
+<table class = "tableButtons" align="center">
+<tr><th width="225"><input type="button" value = "Save settings" onclick="saveSettings()"></th><th width="255"><input type="button" value = "Reboot device" onclick="rebootDevice()"></th></tr>
+</table>
+</div>
+</body>
+</html>

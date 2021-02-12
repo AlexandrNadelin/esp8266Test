@@ -91,6 +91,7 @@ void setup() {
   pinMode(D_OUT_1, OUTPUT);
   digitalWrite(D_OUT_1, LOW);
 
+  WiFi.mode(WIFI_AP_STA);
   Serial.print("Setting soft-AP configuration ... ");
   Serial.println(WiFi.softAPConfig(apIP, apGateWay, apSubnet) ? "Ready" : "Failed!");
 

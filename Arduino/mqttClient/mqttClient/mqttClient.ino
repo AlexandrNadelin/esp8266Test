@@ -17,47 +17,27 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 
 void sendResultMeasuring(){
-  if(!client.connected())return;
+  if(!client.connected())
+  {
+    dataSendTicker.detach();
+    return;
+  }
   char adcStr[12];
   sensorValue = analogRead(analogInPin)*3.3F/1024.0F;
   sprintf(adcStr,"%f",sensorValue);
-  client.publish("esp/ADC", adcStr);
+  boolean result = client.publish("esp/ADC", adcStr);
 }
  
 void setup(){ 
   Serial.begin(115200);
+  Serial.println();
 
   WiFi.mode(WIFI_STA);//(WIFI_AP_STA);
-  WiFi.begin(ssid, password);
- 
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.println("Connecting to WiFi..");
-  }
-  Serial.println("Connected to the WiFi network");
- 
-  client.setServer(mqttServer, mqttPort);
-  client.setCallback(callback);
- 
-  while (!client.connected()){
-    Serial.println("Connecting to MQTT...");
- 
-    if(client.connect("ESP8266Client", mqttUser, mqttPassword )){ 
-      Serial.println("connected"); 
-    }else{ 
-      Serial.print("failed with state ");
-      Serial.print(client.state());
-      delay(2000); 
-    }
-  }
-
- dataSendTicker.attach(1.5,sendResultMeasuring);
-  //client.publish("esp/test", "Hello from ESP8266");
-  client.subscribe("esp/test"); 
+  //configure ap
 }
  
-void callback(char* topic, byte* payload, unsigned int length) {
- 
+void callback(char* topic, byte* payload, unsigned int length)
+{ 
   Serial.print("Message arrived in topic: ");
   Serial.println(topic);
  
@@ -67,10 +47,50 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
  
   Serial.println();
-  Serial.println("-----------------------");
- 
+  Serial.println("-----------------------"); 
 }
  
 void loop() {
-  client.loop();
+  if(WiFi.status() != WL_CONNECTED)
+  {
+    Serial.print("Connecting to ");
+    Serial.print(ssid);
+    Serial.println("...");
+    //WiFi.mode(WIFI_STA);
+    WiFi.begin(ssid, password);
+
+    if (WiFi.waitForConnectResult() != WL_CONNECTED)return;
+    
+    //delay(1000);
+    //if(WiFi.status() != WL_CONNECTED)Serial.println("Connecting to WiFi..");
+    //else
+    if(WiFi.status() == WL_CONNECTED)
+    {
+      Serial.println("Connected to the WiFi network");
+ 
+      client.setServer(mqttServer, mqttPort);
+      client.setCallback(callback);
+ 
+      while (!client.connected()&&WiFi.status() == WL_CONNECTED)
+      {
+        Serial.println("Connecting to MQTT...");
+ 
+        if(client.connect("ESP8266Client", mqttUser, mqttPassword ))Serial.println("connected"); 
+        else
+        { 
+          Serial.print("failed with state ");
+          Serial.print(client.state());
+          delay(2000); 
+        }
+      }
+
+      if(client.connected())
+      {
+        dataSendTicker.attach(1.5,sendResultMeasuring);
+        client.subscribe("esp/test");
+      }
+    }
+  }
+  
+  if(client.connected()) client.loop();
 }

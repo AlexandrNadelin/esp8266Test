@@ -1,0 +1,6 @@
+To convert from a DER to a base64, you can use certutil :
+
+certutil -encode filename.cer newfilename.cer
+And from a base64 to a DER, you can use :
+
+certutil -decode filename.cer newfilename.cer

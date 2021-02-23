@@ -22,6 +22,9 @@ const char* ap_password = "AngryBird";
 const char *st_ssid = "TP-LINK_453D2A"; 
 const char *st_password = "36216703";
 
+/*String myip="192.168.1.2"
+IPAddress local_IP;
+bool x= local_IP.fromString(myip);*/
 IPAddress apIP(192,168,5,1);
 IPAddress apSubnet(255,255,255,0);
 IPAddress apGateWay(192,168,5,1);

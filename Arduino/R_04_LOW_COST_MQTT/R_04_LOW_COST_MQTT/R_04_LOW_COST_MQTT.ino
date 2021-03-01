@@ -1,13 +1,17 @@
 #include <ESP8266WiFi.h>
+#include <Ticker.h>
 #include "Config.h"
 #include "MemoryManager.h"
 #include "MQTTConnection.h"
 #include "TimeSpan.h"
+#include "PinsStateManager.h"
+#include "HTTPServer.h"
 
 MemoryManager memoryManager;
+PinsStateManager pinsStateManager;
+Ticker pinsStateManagerLoopTicker;
 MQTTConnector mqttConnector;
-
-//unsigned long previousPublishTime=0;
+HTTPServer httpServer;
 
 void setup() {
   #ifdef SERIAL_DEBUG_ENABLED
@@ -16,17 +20,15 @@ void setup() {
   #endif
 
   memoryManager.begin();
-  mqttConnector.begin(&memoryManager);
+  pinsStateManager.begin();
+
+  pinsStateManagerLoopTicker.attach(1.0,[](){pinsStateManager.loop();}); 
+  
+  if(pinsStateManager.getDINModeState()) mqttConnector.begin(&memoryManager,&pinsStateManager);
+  else httpServer.begin(&memoryManager,&pinsStateManager);
 }
 
 void loop() {
-  mqttConnector.loop();
-
-  /*unsigned long currentTime=millis();
-  unsigned long timeSpan=calculateTimeSpan(currentTime, previousPublishTime);
-  if(timeSpan>2000)
-  {
-      Serial.println("Time ellapsed");//mqtt.publish("base/state/adc", "hello mqtts");
-      previousPublishTime=currentTime;
-  }*/
+  if(pinsStateManager.getDINModeState()) mqttConnector.loop();
+  else httpServer.loop();
 }

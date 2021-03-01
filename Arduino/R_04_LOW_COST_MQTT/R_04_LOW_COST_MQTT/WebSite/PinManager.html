@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>R-04 Low cost</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+<script>
+let d = document;
+let timerId;
+let intervalTime =1000;
+
+function checkFloat(arg_id){
+  let element = d.getElementById(arg_id);
+  let num = parseFloat(element.value);
+  if(num != num){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+  return false;
+  }else{
+    if(!element.value.endsWith('.')) element.value = num;
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+  return true;
+  }
+}
+
+function checkDecUint16(arg_id){
+  let element = d.getElementById(arg_id);
+  let num = parseInt(element.value, 10);
+  if(num != num||num<0||num>65535){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkSSID(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkPASSWORD(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""||element.value.length<8){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkSettings(){
+  let result = true;
+  result &= checkSSID('ApSSID');
+  result &= checkPASSWORD('ApPASSWORD');
+  result &= checkSSID('StSSID');
+  result &= checkPASSWORD('StPASSWORD');
+  result &= checkSSID('ApSSID');
+  result &= checkIp('StIPAddress');
+  result &= checkIp('StSubnetMask');
+  result &= checkIp('StGateway');
+  result &= checkDecUint16('StPort')
+  return result;
+}
+
+function checkIp(arg_id)
+{
+  let regexp=/^(?=\d+\.\d+\.\d+\.\d+$)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\.?){4}$/;
+  let element = d.getElementById(arg_id);
+  let result = regexp.test(element.value);
+  if(!result){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+   }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+  }
+  return result;
+}
+
+function getNetworkParameters(){
+  let reqGetSettings = new XMLHttpRequest();
+  reqGetSettings.open("GET","NetworkParameters.property?=",true);
+  reqGetSettings.timeout = 5000;
+  reqGetSettings.onreadystatechange = function(){
+    if(reqGetSettings.readyState != 4)return;
+    if(reqGetSettings.status != 200){
+	  alert(reqGetSettings.status==0?"Read parameters timeout":reqGetSettings.statusText);
+    }else{
+	  let settings = JSON.parse (reqGetSettings.response);
+      d.getElementById('ApSSID').value = settings.ApSSID;
+      d.getElementById('ApPASSWORD').value = settings.ApPASSWORD;
+      d.getElementById('ApIPAddress').value = settings.ApIPAddress;
+      d.getElementById('ApSubnetMask').value = settings.ApSubnetMask;
+      d.getElementById('ApGateway').value = settings.ApGateway;
+	  
+      d.getElementById('StSSID').value = settings.StSSID;
+      d.getElementById('StPASSWORD').value = settings.StPASSWORD;
+	  
+      d.getElementById('MQTTServer').value = settings.MQTTServer;
+      d.getElementById('MQTTPort').value = settings.MQTTPort;
+      d.getElementById('MQTTLogin').value = settings.MQTTLogin;
+      d.getElementById('MQTTPassword').value = settings.MQTTPassword;
+      d.getElementById('MQTTClientID').value = settings.MQTTClientID;
+      d.getElementById('MQTTPublishPeriod').value = settings.MQTTPublishPeriod;
+	}
+  }
+  try{
+    reqGetSettings.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function setNetworkParameters(){
+  if(!checkSettings()){
+    alert("Settings input error.");
+	return;
+  }
+  
+  let settings ={
+    ApSSID: d.getElementById("ApSSID").value,
+    ApPASSWORD: d.getElementById("ApPASSWORD").value,
+    ApIPAddress: d.getElementById("ApIPAddress").value,
+    ApSubnetMask: d.getElementById("ApSubnetMask").value,
+    ApGateway: d.getElementById("ApGateway").value,
+	
+    StSSID: d.getElementById("StSSID").value,
+    StPASSWORD: d.getElementById("StPASSWORD").value,
+	
+    MQTTServer: d.getElementById("MQTTServer").value,
+    MQTTPort: d.getElementById("MQTTPort").value.toString(),
+    MQTTLogin: d.getElementById("MQTTLogin").value,
+    MQTTPassword: d.getElementById("MQTTPassword").value,
+    MQTTClientID: d.getElementById("MQTTClientID").value,
+    MQTTPublishPeriod: d.getElementById("MQTTPublishPeriod").value.toString(),
+  };
+  
+  let reqGetSettings = new XMLHttpRequest();
+  reqGetSettings.open("POST","NetworkParameters.property=",true);
+  reqGetSettings.timeout = 5000;
+  reqGetSettings.onreadystatechange = function(){
+    if(reqGetSettings.readyState != 4)return;
+    if(reqGetSettings.status != 200){
+	  alert(reqGetSettings.status==0?"Write parameters timeout":reqGetSettings.statusText);
+    }else{
+	  alert("Parameters were writed successfully.");
+	}
+  }
+  try{
+    reqGetSettings.send(JSON.stringify(settings));
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function rebootDevice(){
+  let reqRebootDevice = new XMLHttpRequest();
+  reqRebootDevice.open("GET","reboot",true);
+  reqRebootDevice.timeout = 5000;
+  reqRebootDevice.onreadystatechange = function(){
+    if(reqRebootDevice.readyState != 4)return;
+    if(reqRebootDevice.status != 200){
+	  alert(reqRebootDevice.status==0?"Reboot cmd timeout":reqRebootDevice.statusText);
+    }else{
+	  alert("Device was rebooted successfully.");
+	}
+  }
+  try{
+    reqRebootDevice.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function onMainPageLoad(){
+  getSettings();
+}
+</script>
+</head>
+<body><!-- onload="getNetworkParameters()"-->
+<div class="container">
+<div class = "hBlock">
+	<input type="button" class="topButtons" value = "Network Parameters" onclick="location.href='Index.html'">
+	<input type="button" class="topButtons" value = "Pin Manager"  onclick="location.href='PinManager.html'">
+</div>
+<div id="header"><h1>R-04 Low Cost</h1></div>
+<div>
+<h3>Analog Input</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Analog Input Value</label></div>
+		<div class = "hBlock"><input type="text" id="AINVal"></div><!-- oninput="checkIp('AINVal')"-->
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<h3>Digital Inputs</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Input 1 State</label></div>
+		<div class = "hBlock"><input type="text" id="DIN1State"></div>
+	</div>
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Input 2 State</label></div>
+		<div class = "hBlock"><input type="text" id="DIN2State"></div>
+	</div>
+</div>
+<h3>Digital Output</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Output State</label></div>
+		<div class = "hBlock"><input type="text" id="DOUTState"></div><!-- oninput="checkIp('ApIPAddress')"-->
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Output State Formula</label></div>
+		<div class = "hBlock"><input type="text" id="DOUTStateFormula" oninput="checkSSID(DOUTStateFormula)"></div>
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><input type="button" value = "Save Formula"></div>
+	</div>
+</div>	
+</div>
+</div>
+</body>
+</html>

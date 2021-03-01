@@ -1,0 +1,207 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>R-04 Low cost</title>
+<link href="style.css" rel="stylesheet" type="text/css">
+<script>
+let d = document;
+let timerId;
+let intervalTime =1000;
+
+function checkFloat(arg_id){
+  let element = d.getElementById(arg_id);
+  let num = parseFloat(element.value);
+  if(num != num){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+  return false;
+  }else{
+    if(!element.value.endsWith('.')) element.value = num;
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+  return true;
+  }
+}
+
+function checkDecUint16(arg_id){
+  let element = d.getElementById(arg_id);
+  let num = parseInt(element.value, 10);
+  if(num != num||num<0||num>65535){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkSSID(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkPASSWORD(arg_id){
+let element = d.getElementById(arg_id);
+  if(element.value==""||element.value.length<8){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+    return false;
+  }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+    return true;
+  }
+}
+
+function checkSettings(){
+  let result = true;
+  result &= checkSSID('ApSSID');
+  result &= checkPASSWORD('ApPASSWORD');
+  result &= checkSSID('StSSID');
+  result &= checkPASSWORD('StPASSWORD');
+  result &= checkSSID('ApSSID');
+  result &= checkIp('StIPAddress');
+  result &= checkIp('StSubnetMask');
+  result &= checkIp('StGateway');
+  result &= checkDecUint16('StPort')
+  return result;
+}
+
+function checkIp(arg_id)
+{
+  let regexp=/^(?=\d+\.\d+\.\d+\.\d+$)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\.?){4}$/;
+  let element = d.getElementById(arg_id);
+  let result = regexp.test(element.value);
+  if(!result){
+    element.classList.add('error-input-border');
+    element.classList.remove('correct-input-border');
+   }else{
+    element.classList.add('correct-input-border');
+    element.classList.remove('error-input-border');
+  }
+  return result;
+}
+
+function getSettings(){
+  let reqGetSettings = new XMLHttpRequest();
+  reqGetSettings.open("GET","R_04.settings?=",true);
+  reqGetSettings.timeout = 5000;
+  reqGetSettings.onreadystatechange = function(){
+    if(reqGetSettings.readyState != 4)return;
+    if(reqGetSettings.status != 200){
+	  alert(reqGetSettings.status==0?"Read settings timeout":reqGetSettings.statusText);
+    }else{
+	  let settings = JSON.parse (reqGetSettings.response);
+      d.getElementById('ApSSID').value = settings.ApSSID;
+      d.getElementById('ApPASSWORD').value = settings.ApPASSWORD;
+      d.getElementById('StSSID').value = settings.StSSID;
+      d.getElementById('StPASSWORD').value = settings.StPASSWORD;
+      d.getElementById('StIPAddress').value = settings.StIPAddress;
+      d.getElementById('StSubnetMask').value = settings.StSubnetMask;
+      d.getElementById('StGateway').value = settings.StGateway;
+      d.getElementById('StPort').value = settings.StPort;
+	}
+  }
+  try{
+    reqGetSettings.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function saveSettings(){
+  if(!checkSettings()){
+    alert("Settings input error.");
+	return;
+  }
+  
+  let settings ={
+    ApSSID: d.getElementById("ApSSID").value,
+    ApPASSWORD: d.getElementById("ApPASSWORD").value,
+    StSSID: d.getElementById("StSSID").value,
+    StPASSWORD: d.getElementById("StPASSWORD").value,
+    StIPAddress: d.getElementById("StIPAddress").value,
+    StSubnetMask: d.getElementById("StSubnetMask").value,
+    StGateway: d.getElementById("StGateway").value,
+    StPort: d.getElementById("StPort").value,
+  };
+  
+  let reqGetSettings = new XMLHttpRequest();
+  reqGetSettings.open("POST","R_04.settings",true);
+  reqGetSettings.timeout = 5000;
+  reqGetSettings.onreadystatechange = function(){
+    if(reqGetSettings.readyState != 4)return;
+    if(reqGetSettings.status != 200){
+	  alert(reqGetSettings.status==0?"Read settings timeout":reqGetSettings.statusText);
+    }else{
+	  alert("Settings were writed successfully.");
+	}
+  }
+  try{
+    reqGetSettings.send(JSON.stringify(settings));
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function rebootDevice(){
+  let reqRebootDevice = new XMLHttpRequest();
+  reqRebootDevice.open("GET","R_04.reboot",true);
+  reqRebootDevice.timeout = 5000;
+  reqRebootDevice.onreadystatechange = function(){
+    if(reqRebootDevice.readyState != 4)return;
+    if(reqRebootDevice.status != 200){
+	  alert(reqRebootDevice.status==0?"Reboot cmd timeout":reqRebootDevice.statusText);
+    }else{
+	  alert("Device was rebooted successfully.");
+	}
+  }
+  try{
+    reqRebootDevice.send(null);
+  }
+  catch(exception){
+    alert(exception);
+  }
+}
+
+function onMainPageLoad(){
+  getSettings();
+}
+</script>
+</head>
+<body><!-- onload="onMainPageLoad()"-->
+<div id="header"><h1>R-04 Low cost</h1></div>
+<div class="block">
+<h3>Access Point network parameters</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="60%">SSID</td><td align="center"><input id="ApSSID" type="text" oninput ="checkSSID('ApSSID')"></td></tr>
+<tr><td width="60%">PASSWORD</td><td align="center"><input id="ApPASSWORD" type="text" oninput ="checkPASSWORD('ApPASSWORD')"></td></tr>
+</table>
+<h3>Station network parameters</h3>
+<table border="1" cellpadding="5" align="center">
+<tr><td width="60%">SSID</td><td align="center"><input id="StSSID" type="text" oninput ="checkSSID('StSSID')"></td></tr>
+<tr><td width="60%">PASSWORD</td><td align="center"><input id="StPASSWORD" type="text" oninput ="checkPASSWORD('StPASSWORD')"></td></tr>
+<tr><td width="60%">IP address</td><td align="center"><input id="StIPAddress" type="text" oninput ="checkIp('StIPAddress')"></td></tr>
+<tr><td width="60%">Subnet mask</td><td align="center"><input id="StSubnetMask" type="text" oninput ="checkIp('StSubnetMask')"></td></tr>
+<tr><td width="60%">Gateway</td><td align="center"><input id="StGateway" type="text" oninput ="checkIp('StGateway')"></td></tr>
+<tr><td width="60%">Port</td><td align="center"><input id="StPort" type="text" oninput ="checkDecUint16('StPort')"></td></tr>
+</table>
+<table class = "tableButtons" align="center">
+<tr><th width="225"><input type="button" value = "Save settings" onclick="saveSettings()"></th><th width="255"><input type="button" value = "Reboot device" onclick="rebootDevice()"></th></tr>
+</table>
+</div>
+</body>
+</html>

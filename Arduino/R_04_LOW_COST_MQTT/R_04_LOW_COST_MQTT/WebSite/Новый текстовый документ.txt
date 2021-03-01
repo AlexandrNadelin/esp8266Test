@@ -1,0 +1,50 @@
+<body><!-- onload="getNetworkParameters()"-->
+<div class="container">
+<div class = "hBlock">
+	<input type="button" class="topButtons" value = "Network Parameters" onclick="location.href='Index.html'">
+	<input type="button" class="topButtons" value = "Pin Manager"  onclick="location.href='PinManager.html'">
+</div>
+<div id="header"><h1>R-04 Low Cost</h1></div>
+<div>
+<h3>Analog Input</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Analog Input Value</label></div>
+		<div class = "hBlock"><input type="text" id="AINVal"</div><!-- oninput="checkIp('ApIPAddress')"-->
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<h3>Digital Inputs</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Input 1 State</label></div>
+		<div class = "hBlock"><input type="text" id="DIN1State"></div>
+	</div>
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Input 2 State</label></div>
+		<div class = "hBlock"><input type="text" id="DIN2State"></div>
+	</div>
+</div>
+<h3>Digital Output</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Digital Output State</label></div>
+		<div class = "hBlock"><input type="text" id="DOUTState"</div><!-- oninput="checkIp('ApIPAddress')"-->
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<h3>Digital Output State Formula</h3>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><input type="text" id="DOUTStateFormula"</div><!-- oninput="checkIp('ApIPAddress')"-->
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<!--div class = "hBlock">
+	<div class = "vBlock"><input type="button" value = "Save Parameters" onclick="setNetworkParameters()"></div>
+	<div class = "vBlock"><input type="button" value = "Reboot Device" onclick="rebootDevice()"></div>
+</div-->
+</div>
+</div>
+</div>
+</body>

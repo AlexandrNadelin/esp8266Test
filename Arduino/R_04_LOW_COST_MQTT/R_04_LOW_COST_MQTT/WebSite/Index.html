@@ -38,7 +38,7 @@ function checkDecUint16(arg_id){
   }
 }
 
-function checkSSID(arg_id){
+function checkText(arg_id){
 let element = d.getElementById(arg_id);
   if(element.value==""){
     element.classList.add('error-input-border');
@@ -66,15 +66,21 @@ let element = d.getElementById(arg_id);
 
 function checkSettings(){
   let result = true;
-  result &= checkSSID('ApSSID');
+  result &= checkText('ApSSID');
   result &= checkPASSWORD('ApPASSWORD');
-  result &= checkSSID('StSSID');
+  result &= checkIp('ApIPAddress');
+  result &= checkIp('ApSubnetMask');
+  result &= checkIp('ApGateway');
+  
+  result &= checkText('StSSID');
   result &= checkPASSWORD('StPASSWORD');
-  result &= checkSSID('ApSSID');
-  result &= checkIp('StIPAddress');
-  result &= checkIp('StSubnetMask');
-  result &= checkIp('StGateway');
-  result &= checkDecUint16('StPort')
+  
+  result &= checkText('MQTTServer');
+  result &= checkDecUint16('MQTTPort')
+  result &= checkText('MQTTLogin');
+  result &= checkText('MQTTPassword');
+  result &= checkText('MQTTClientID');
+  result &= checkDecUint16('MQTTPublishPeriod')
   return result;
 }
 
@@ -153,7 +159,7 @@ function setNetworkParameters(){
   };
   
   let reqGetSettings = new XMLHttpRequest();
-  reqGetSettings.open("POST","NetworkParameters.property=",true);
+  reqGetSettings.open("POST","NetworkParameters.property",true);
   reqGetSettings.timeout = 5000;
   reqGetSettings.onreadystatechange = function(){
     if(reqGetSettings.readyState != 4)return;
@@ -196,7 +202,7 @@ function onMainPageLoad(){
 }
 </script>
 </head>
-<body><!-- onload="getNetworkParameters()"-->
+<body onload="getNetworkParameters()">
 <div class="container">
 <div class = "hBlock">
 	<input type="button" class="topButtons" value = "Network Parameters" onclick="location.href='Index.html'">
@@ -208,11 +214,11 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>SSID</label></div>
-		<div class = "hBlock"><input type="text" id="ApSSID" oninput="checkSSID('ApSSID')"></div>
+		<div class = "hBlock"><input type="text" id="ApSSID" oninput="checkText('ApSSID')"></div>
 	</div>
 	<div class = "vBlock">
 		<div class = "hBlock"><label>PASSWORD</label></div>
-		<div class = "hBlock"><input type="text" id="ApPASSWORD" oninput="checkSSID('ApPASSWORD')"></div>
+		<div class = "hBlock"><input type="text" id="ApPASSWORD" oninput="checkText('ApPASSWORD')"></div>
 	</div>
 </div>
 <div class = "hBlock">
@@ -236,18 +242,18 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>SSID</label></div>
-		<div class = "hBlock"><input type="text" id="StSSID" oninput="checkSSID('StSSID')"></div>
+		<div class = "hBlock"><input type="text" id="StSSID" oninput="checkText('StSSID')"></div>
 	</div>
 	<div class = "vBlock">
 		<div class = "hBlock"><label>PASSWORD</label></div>
-		<div class = "hBlock"><input type="text" id="StPASSWORD" oninput="checkSSID('StPASSWORD')"></div>
+		<div class = "hBlock"><input type="text" id="StPASSWORD" oninput="checkText('StPASSWORD')"></div>
 	</div>
 </div>
 <h3>MQTT Client Parameters</h3>
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Server</label></div>
-		<div class = "hBlock"><input type="text" id="MQTTServer" oninput="checkSSID('MQTTServer')"></div>
+		<div class = "hBlock"><input type="text" id="MQTTServer" oninput="checkText('MQTTServer')"></div>
 	</div>
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Port Number</label></div>
@@ -257,17 +263,17 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Login</label></div>
-		<div class = "hBlock"><input type="text" id="MQTTLogin" oninput="checkSSID('MQTTLogin')"></div>
+		<div class = "hBlock"><input type="text" id="MQTTLogin" oninput="checkText('MQTTLogin')"></div>
 	</div>
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Password</label></div>
-		<div class = "hBlock"><input type="text" id="MQTTPassword" oninput="checkSSID('MQTTPassword')"></div>
+		<div class = "hBlock"><input type="text" id="MQTTPassword" oninput="checkText('MQTTPassword')"></div>
 	</div>
 </div>
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Client ID</label></div>
-		<div class = "hBlock"><input type="text" id="MQTTClientID" oninput="checkSSID('MQTTClientID')"></div>
+		<div class = "hBlock"><input type="text" id="MQTTClientID" oninput="checkText('MQTTClientID')"></div>
 	</div>
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Publish Polling Period</label></div>
@@ -281,7 +287,7 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>MQTT Root Certificate Validity Period</label></div>
-		<div class = "hBlock"><input type="text" id="MQTTRootCertificate" oninput="checkSSID('MQTTRootCertificate')"></div>
+		<div class = "hBlock"><input type="text" id="MQTTRootCertificate" oninput="checkText('MQTTRootCertificate')"></div>
 	</div>
 	<div class = "vBlock"></div>
 </div>

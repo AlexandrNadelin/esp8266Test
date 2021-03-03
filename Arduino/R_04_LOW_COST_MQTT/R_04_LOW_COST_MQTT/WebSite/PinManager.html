@@ -38,7 +38,7 @@ function checkDecUint16(arg_id){
   }
 }
 
-function checkSSID(arg_id){
+function checkText(arg_id){
 let element = d.getElementById(arg_id);
   if(element.value==""){
     element.classList.add('error-input-border');
@@ -66,11 +66,11 @@ let element = d.getElementById(arg_id);
 
 function checkSettings(){
   let result = true;
-  result &= checkSSID('ApSSID');
+  result &= checkText('ApSSID');
   result &= checkPASSWORD('ApPASSWORD');
-  result &= checkSSID('StSSID');
+  result &= checkText('StSSID');
   result &= checkPASSWORD('StPASSWORD');
-  result &= checkSSID('ApSSID');
+  result &= checkText('ApSSID');
   result &= checkIp('StIPAddress');
   result &= checkIp('StSubnetMask');
   result &= checkIp('StGateway');
@@ -234,7 +234,7 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>Digital Output State Formula</label></div>
-		<div class = "hBlock"><input type="text" id="DOUTStateFormula" oninput="checkSSID(DOUTStateFormula)"></div>
+		<div class = "hBlock"><input type="text" id="DOUTStateFormula" oninput="checkText(DOUTStateFormula)"></div>
 	</div>
 	<div class = "vBlock"></div>
 </div>

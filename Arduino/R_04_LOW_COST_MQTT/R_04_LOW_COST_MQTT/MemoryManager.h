@@ -40,12 +40,12 @@ const char mqttUser[] PROGMEM =     "MyMqttUser";//"\"mqttUser\": \"MyMqttUser\"
 const char mqttPassword[] PROGMEM = "MyMqttUserPassword";//"\"mqttPassword\": \"MyMqttUserPassword\",";
 const char mqttPublishPollingPeriod[] PROGMEM = "2000";//"\"mqttPassword\": \"MyMqttUserPassword\",";
 
-const char doutFormula[] PROGMEM =  "0";//"\"doutFormula\": \"0\",";
+/*const char doutFormula[] PROGMEM =  "0";*///"\"doutFormula\": \"0\",";
 
-static const int arrayPropertiesLenght = 14;
+static const int arrayPropertiesLenght = 13;
 
 const char* const arrayProperties[] PROGMEM = {
-  apSSID, apPassword, apIP,apSubnet,apGateWay,stSSID,stPassword,mqttServer,mqttPort,mqttClientID,mqttUser,mqttPassword,mqttPublishPollingPeriod,doutFormula
+  apSSID, apPassword, apIP,apSubnet,apGateWay,stSSID,stPassword,mqttServer,mqttPort,mqttClientID,mqttUser,mqttPassword,mqttPublishPollingPeriod/*,doutFormula*/
 };
 
 const char pemCA[] PROGMEM = R"EOF(
@@ -155,20 +155,40 @@ class MemoryManager {
       return &pemCA_cer;      
     }
   
-    void readLineFromFile(File* file,char* destString)
+    int readLineFromFile(File* file,char* destString)
     {
       byte byteTmp=0;
       int currentByte = 0; 
       while (file->available())
       {//int l = file.readBytesUntil('\n', buffer, sizeof(buffer));
         byteTmp=file->read(); 
-        if((char)byteTmp=='\n')
-        {
-          destString[currentByte++] = 0;
-          break;
-        }
+        if((char)byteTmp=='\n')break;
         else if((char)byteTmp!='\r') destString[currentByte++] = byteTmp;//'\r' skip
-      }  
+      } 
+      destString[currentByte] = 0;
+      return currentByte; 
+    }
+
+    bool writeDefaultNetworkParametersToFile()
+    {
+      if(!(networkParameters = SPIFFS.open("/NetworkParameters.property", "w")))
+      {
+        #ifdef SERIAL_DEBUG_ENABLED
+        Serial.println("Failed to open networkParameters.property to write");
+        #endif
+        return false;
+      }
+      for(int j = 0; j < arrayPropertiesLenght;j++)
+      {
+        for(int i = 0; i < strlen_P(arrayProperties[j]); i++)
+        {
+          networkParameters.print((char)pgm_read_byte(&arrayProperties[j][i]));
+        }
+        networkParameters.println();
+      }
+ 
+      networkParameters.close(); 
+      return true;
     }
     
 	  void begin()
@@ -189,104 +209,90 @@ class MemoryManager {
         return;
       } 
   
-      while(!(networkParameters = SPIFFS.open("/networkParameters.property", "r")))
+      while(!(networkParameters = SPIFFS.open("/NetworkParameters.property", "r")))
       {
         #ifdef SERIAL_DEBUG_ENABLED
         Serial.println("Failed to open networkParameters.property to read");
         #endif
 
-        if(!(networkParameters = SPIFFS.open("/networkParameters.property", "w")))
+        if(!writeDefaultNetworkParametersToFile())return;
+      }
+
+      #ifdef SERIAL_DEBUG_ENABLED
+      Serial.println("Success to open networkParameters.property");
+      #endif
+      //size_t sent = server.streamFile(file, contentType);    // Send it to the client
+      /*while (networkParameters.available()) {//int l = file.readBytesUntil('\n', buffer, sizeof(buffer));
+      //Serial.print(networkParameters.read());  //����� �������� �� ������  0x00
+      Serial.write(networkParameters.read());    //����� �������� ��� �����
+      }*/
+
+      //Если не получится получить все данные - надо записать дефолтные значения
+  
+      if(readLineFromFile(&networkParameters,networkProperty.apSSID)==0
+       ||readLineFromFile(&networkParameters,networkProperty.apPassword)==0
+       ||readLineFromFile(&networkParameters,networkProperty.apIP)==0
+       ||readLineFromFile(&networkParameters,networkProperty.apSubnet)==0
+       ||readLineFromFile(&networkParameters,networkProperty.apGateWay)==0
+  
+       ||readLineFromFile(&networkParameters,networkProperty.stSSID)==0
+       ||readLineFromFile(&networkParameters,networkProperty.stPassword)==0
+
+       ||readLineFromFile(&networkParameters,networkProperty.mqttServer)==0
+       ||readLineFromFile(&networkParameters,networkProperty.mqttPort)==0
+       ||readLineFromFile(&networkParameters,networkProperty.mqttClientID)==0
+       ||readLineFromFile(&networkParameters,networkProperty.mqttUser)==0
+       ||readLineFromFile(&networkParameters,networkProperty.mqttPassword)==0
+       ||readLineFromFile(&networkParameters,networkProperty.mqttPublishPollingPeriod)==0)
+       {
+         #ifdef SERIAL_DEBUG_ENABLED
+         Serial.println("networkParameters.property reading error, write default settings");
+         #endif
+         networkParameters.close();
+         writeDefaultNetworkParametersToFile();
+       }
+       else networkParameters.close();
+      /*readLineFromFile(&networkParameters,networkProperty.doutFormula);*/
+  
+       
+
+      Serial.println(networkProperty.apSSID);
+      Serial.println(networkProperty.apPassword);
+      Serial.println(networkProperty.apIP);
+      Serial.println(networkProperty.apSubnet);
+      Serial.println(networkProperty.apGateWay);
+  
+      Serial.println(networkProperty.stSSID);
+      Serial.println(networkProperty.stPassword);
+  
+      Serial.println(networkProperty.mqttServer);
+      Serial.println(networkProperty.mqttPort);
+      Serial.println(networkProperty.mqttClientID);
+      Serial.println(networkProperty.mqttUser);//mqttPublishPollingPeriod
+      Serial.println(networkProperty.mqttPassword);
+      Serial.println(networkProperty.mqttPublishPollingPeriod);
+  
+      /*Serial.println(networkProperty.doutFormula);*/
+
+      while(!(pemCA_cer = SPIFFS.open("/pemCA.cer", "r")))
+      {
+        #ifdef SERIAL_DEBUG_ENABLED
+        Serial.println("Failed to open pemCA.cer to read");
+        #endif
+
+        if (!(pemCA_cer = SPIFFS.open("/pemCA.cer", "w")))
         {
           #ifdef SERIAL_DEBUG_ENABLED
-          Serial.println("Failed to open networkParameters.property to write");
+          Serial.println("Failed to open pemCA.cer to write");
           #endif
           return;
         }
         //int bytesWritten = networkParameters.print("TEST SPIFFS");
         //int bytesWriten = networkParameters.write(&RTC_cache_data[0], RTC_cache.writePos);
-        //networkParameters.println("{");
-
-        for(int j = 0; j < arrayPropertiesLenght;j++)
+        for(int i = 0; i < strlen_P(pemCA); i++)
         {
-          for(int i = 0; i < strlen_P(arrayProperties[j]); i++)
-          {
-            networkParameters.print((char)pgm_read_byte(&arrayProperties[j][i]));
-          }
-          networkParameters.println();
+          pemCA_cer.print((char)pgm_read_byte(&pemCA[i])); 
         }
-        //networkParameters.println("}");
- 
-        networkParameters.close();    
-        }
-
-        #ifdef SERIAL_DEBUG_ENABLED
-        Serial.println("Success to open networkParameters.property");
-        #endif
-        //size_t sent = server.streamFile(file, contentType);    // Send it to the client
-        /*while (networkParameters.available()) {//int l = file.readBytesUntil('\n', buffer, sizeof(buffer));
-        //Serial.print(networkParameters.read());  //����� �������� �� ������  0x00
-        Serial.write(networkParameters.read());    //����� �������� ��� �����
-        }*/
-  
-        readLineFromFile(&networkParameters,networkProperty.apSSID);
-        readLineFromFile(&networkParameters,networkProperty.apPassword);
-        readLineFromFile(&networkParameters,networkProperty.apIP);
-        readLineFromFile(&networkParameters,networkProperty.apSubnet);
-        readLineFromFile(&networkParameters,networkProperty.apGateWay);
-  
-        readLineFromFile(&networkParameters,networkProperty.stSSID);
-        readLineFromFile(&networkParameters,networkProperty.stPassword);
-
-        readLineFromFile(&networkParameters,networkProperty.mqttServer);
-        readLineFromFile(&networkParameters,networkProperty.mqttPort);
-        readLineFromFile(&networkParameters,networkProperty.mqttClientID);
-        readLineFromFile(&networkParameters,networkProperty.mqttUser);
-        readLineFromFile(&networkParameters,networkProperty.mqttPassword);
-        readLineFromFile(&networkParameters,networkProperty.mqttPublishPollingPeriod);
-  
-        readLineFromFile(&networkParameters,networkProperty.doutFormula);
-  
-        networkParameters.close(); 
-
-        //---Check networkProperty
-        /*Serial.println(networkProperty.apSSID);
-        Serial.println(networkProperty.apPassword);
-        Serial.println(networkProperty.apIP);
-        Serial.println(networkProperty.apSubnet);
-        Serial.println(networkProperty.apGateWay);
-  
-        Serial.println(networkProperty.stSSID);
-        Serial.println(networkProperty.stPassword);
-  
-        Serial.println(networkProperty.mqttServer);
-        Serial.println(networkProperty.mqttPort);
-        Serial.println(networkProperty.mqttClientID);
-        Serial.println(networkProperty.mqttUser);//mqttPublishPollingPeriod
-        Serial.println(networkProperty.mqttPassword);
-        Serial.println(networkProperty.mqttPublishPollingPeriod);
-  
-        Serial.println(networkProperty.doutFormula);*/
-        //---End check networkProperty
-
-        while(!(pemCA_cer = SPIFFS.open("/pemCA.cer", "r")))
-        {
-          #ifdef SERIAL_DEBUG_ENABLED
-          Serial.println("Failed to open pemCA.cer to read");
-          #endif
-
-          if (!(pemCA_cer = SPIFFS.open("/pemCA.cer", "w")))
-          {
-            #ifdef SERIAL_DEBUG_ENABLED
-            Serial.println("Failed to open pemCA.cer to write");
-            #endif
-            return;
-          }
-          //int bytesWritten = networkParameters.print("TEST SPIFFS");
-          //int bytesWriten = networkParameters.write(&RTC_cache_data[0], RTC_cache.writePos);
-          for(int i = 0; i < strlen_P(pemCA); i++)
-          {
-            pemCA_cer.print((char)pgm_read_byte(&pemCA[i])); 
-          }
  
         pemCA_cer.close();    
       }

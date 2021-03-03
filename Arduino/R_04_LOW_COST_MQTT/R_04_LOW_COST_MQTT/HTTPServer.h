@@ -11,6 +11,7 @@
 #include "WebSite.h"
 #include "FsData.h"
 #include "FsFile.h"
+#include <ArduinoJson.h>
 
 static ESP8266WebServer* apServerPtr;
 
@@ -54,6 +55,26 @@ class HTTPServer
       //---apServer.on("/R_04.reboot",HTTP_GET, [](){apServer.send(200);});---//
       apServer.on("/",[](){
         //if(!server.authenticate(www_username, www_password))
+        //return server.requestAuthentication();//     
+        apServerPtr->send(200, "text/html", data_Index_html, sizeof(data_Index_html)); 
+      });  
+      apServer.on("/Index.html",[](){     
+        apServerPtr->send(200, "text/html", data_Index_html, sizeof(data_Index_html)); 
+      });     
+      apServer.on("/style.css",[](){
+        apServerPtr->send(200, "text/css", data_style_css, sizeof(data_style_css)); 
+      });
+      apServer.on("/PinManager.html",[](){
+        apServerPtr->send(200, "text/html", data_PinManager_html, sizeof(data_PinManager_html)); 
+      });
+      apServer.onNotFound([](){
+        apServerPtr->send(404, "text/plain", "404: Not found"); 
+      });
+      /*apServer.on("/favicon.ico",[](){
+        apServerPtr->send(200, "image/x-icon", data_favicon_ico, sizeof(data_favicon_ico)); 
+      });*/
+      /*apServer.on("/",[](){
+        //if(!server.authenticate(www_username, www_password))
         //return server.requestAuthentication();//        
         struct fs_file file; 
         fs_open(&file,"Index.html");
@@ -64,10 +85,117 @@ class HTTPServer
         fs_open(&file,"style.css");
         apServerPtr->send(200, "text/css",file.data, file.len); 
       });
-      apServer.on("/favicon.ico",[](){
+      /*apServer.on("/favicon.ico",[](){
         struct fs_file file;
         fs_open(&file,"favicon.ico");
         apServerPtr->send(200, "image/x-icon", file.data, file.len); 
+      });*/
+      apServer.on("/NetworkParameters.property",HTTP_GET,[](){
+        //---reading property---//
+        File networkParameters;
+        if(!(networkParameters = SPIFFS.open("/NetworkParameters.property", "r")))
+        {
+          #ifdef SERIAL_DEBUG_ENABLED
+          Serial.println("Failed to open NetworkParameters.property to read");
+          #endif
+          return;
+        }
+
+        MemoryManager memoryManager;
+
+        char arraySettings[2000];
+        int numberOfBytes = sprintf(arraySettings,"{\"ApSSID\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"ApPASSWORD\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"ApIPAddress\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"ApSubnetMask\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"ApGateway\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"StSSID\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"StPASSWORD\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"MQTTServer\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"MQTTPort\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"MQTTLogin\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"MQTTPassword\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"MQTTClientID\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\",\"MQTTPublishPeriod\":\"");
+        numberOfBytes+=memoryManager.readLineFromFile(&networkParameters,&arraySettings[numberOfBytes]);
+        numberOfBytes+=sprintf(&arraySettings[numberOfBytes],"\"}");
+        arraySettings[numberOfBytes]=0;
+ 
+        networkParameters.close();
+
+        apServerPtr->send(200, "application/json", arraySettings,numberOfBytes);
+      });
+      
+      apServer.on("/NetworkParameters.property",HTTP_POST, [](){
+      String data = apServerPtr->arg("plain"); 
+      StaticJsonDocument<2000> doc;
+      DeserializationError error = deserializeJson(doc, data);
+
+      if(error){
+        #ifdef SERIAL_DEBUG_ENABLED
+          Serial.print(F("deserializeJson() failed: "));
+          Serial.println(error.f_str());
+        #endif
+        return;
+      }
+      
+      File networkParameters;
+      if(!(networkParameters = SPIFFS.open("/NetworkParameters.property", "w")))
+      {
+        #ifdef SERIAL_DEBUG_ENABLED
+          Serial.println("Failed to open NetworkParameters.property to write");
+        #endif
+        return;
+      }  
+      String ApSSID = doc["ApSSID"];
+      String ApPASSWORD = doc["ApPASSWORD"];
+      String ApIPAddress = doc["ApIPAddress"];
+      String ApSubnetMask = doc["ApSubnetMask"];
+      String ApGateway = doc["ApGateway"];
+      
+      String StSSID = doc["StSSID"];
+      String StPASSWORD = doc["StPASSWORD"];
+      
+      String MQTTServer = doc["MQTTServer"];
+      String MQTTPort = doc["MQTTPort"];
+      String MQTTLogin = doc["MQTTLogin"];
+      String MQTTPassword = doc["MQTTPassword"];
+      String MQTTClientID = doc["MQTTClientID"];
+      String MQTTPublishPeriod = doc["MQTTPublishPeriod"]; 
+      
+      networkParameters.println(ApSSID);
+      networkParameters.println(ApPASSWORD);
+      networkParameters.println(ApIPAddress);
+      networkParameters.println(ApSubnetMask);
+      networkParameters.println(ApGateway);
+      
+      networkParameters.println(StSSID);
+      networkParameters.println(StPASSWORD);
+      
+      networkParameters.println(MQTTServer);
+      networkParameters.println(MQTTPort);
+      networkParameters.println(MQTTLogin);
+      networkParameters.println(MQTTPassword);
+      networkParameters.println(MQTTClientID);
+      networkParameters.println(MQTTPublishPeriod); 
+
+      networkParameters.close();
+    
+      apServerPtr->send(200);
       });
       //----------------------------------------------------------------------//
       apServer.begin(80);

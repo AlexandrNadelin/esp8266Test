@@ -6,8 +6,6 @@
 <link href="style.css" rel="stylesheet" type="text/css">
 <script>
 let d = document;
-let timerId;
-let intervalTime =1000;
 
 function checkFloat(arg_id){
   let element = d.getElementById(arg_id);
@@ -100,15 +98,15 @@ function checkIp(arg_id)
 }
 
 function getNetworkParameters(){
-  let reqGetSettings = new XMLHttpRequest();
-  reqGetSettings.open("GET","NetworkParameters.property?=",true);
-  reqGetSettings.timeout = 5000;
-  reqGetSettings.onreadystatechange = function(){
-    if(reqGetSettings.readyState != 4)return;
-    if(reqGetSettings.status != 200){
-	  alert(reqGetSettings.status==0?"Read parameters timeout":reqGetSettings.statusText);
+  let request = new XMLHttpRequest();
+  request.open("GET","NetworkParameters.property?=",true);
+  request.timeout = 5000;
+  request.onreadystatechange = function(){
+    if(request.readyState != 4)return;
+    if(request.status != 200){
+	  alert(request.status==0?"Read parameters timeout":request.statusText);
     }else{
-	  let settings = JSON.parse (reqGetSettings.response);
+	  let settings = JSON.parse (request.response);
       d.getElementById('ApSSID').value = settings.ApSSID;
       d.getElementById('ApPASSWORD').value = settings.ApPASSWORD;
       d.getElementById('ApIPAddress').value = settings.ApIPAddress;
@@ -127,7 +125,7 @@ function getNetworkParameters(){
 	}
   }
   try{
-    reqGetSettings.send(null);
+    request.send(null);
   }
   catch(exception){
     alert(exception);
@@ -158,19 +156,19 @@ function setNetworkParameters(){
     MQTTPublishPeriod: d.getElementById("MQTTPublishPeriod").value.toString(),
   };
   
-  let reqGetSettings = new XMLHttpRequest();
-  reqGetSettings.open("POST","NetworkParameters.property",true);
-  reqGetSettings.timeout = 5000;
-  reqGetSettings.onreadystatechange = function(){
-    if(reqGetSettings.readyState != 4)return;
-    if(reqGetSettings.status != 200){
-	  alert(reqGetSettings.status==0?"Write parameters timeout":reqGetSettings.statusText);
+  let request = new XMLHttpRequest();
+  request.open("POST","NetworkParameters.property",true);
+  request.timeout = 5000;
+  request.onreadystatechange = function(){
+    if(request.readyState != 4)return;
+    if(request.status != 200){
+	  alert(request.status==0?"Write parameters timeout":request.statusText);
     }else{
 	  alert("Parameters were writed successfully.");
 	}
   }
   try{
-    reqGetSettings.send(JSON.stringify(settings));
+    request.send(JSON.stringify(settings));
   }
   catch(exception){
     alert(exception);
@@ -282,7 +280,6 @@ function onMainPageLoad(){
 </div>
 <div class = "hBlock">
 	<div class = "vBlock"><input type="button" value = "Save Parameters" onclick="setNetworkParameters()"></div>
-	<div class = "vBlock"><input type="button" value = "Reboot Device" onclick="rebootDevice()"></div>
 </div>
 <div class = "hBlock">
 	<div class = "vBlock">
@@ -292,9 +289,8 @@ function onMainPageLoad(){
 	<div class = "vBlock"></div>
 </div>
 <div class = "hBlock">
-	<div class = "vBlock">
-		<div class = "hBlock"><input type="button" value = "Upload Certificate"></div>
-	</div>
+	<div class = "vBlock"><input type="button" value = "Upload Certificate"></div>
+	<div class = "vBlock"><input type="button" value = "Reboot Device" onclick="rebootDevice()"></div>
 </div>	
 </div>
 </div>

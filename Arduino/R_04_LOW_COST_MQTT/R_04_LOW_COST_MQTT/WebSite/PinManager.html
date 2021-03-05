@@ -6,8 +6,43 @@
 <link href="style.css" rel="stylesheet" type="text/css">
 <script>
 let d = document;
-let timerId;
-let intervalTime =1000;
+let intervalTime =2000;
+let timerId = setInterval(getParameters,intervalTime);
+
+function getParameters(){
+  let reqGetParameters = new XMLHttpRequest();
+  reqGetParameters.open("GET","Parameters?=",true);
+  reqGetParameters.timeout = 5000;
+  reqGetParameters.onreadystatechange = function(){
+    if(reqGetParameters.readyState != 4)return;
+    if(reqGetParameters.status != 200){
+	  clearInterval(timerId);
+	  intervalTime=8000;
+	  timerId = setInterval(getParameters,intervalTime);
+      //alert(reqGetParameters.status==0?"Timeout":reqGetParameters.statusText);
+    }else{
+	  if(intervalTime==8000){
+	    clearInterval(timerId);
+	    intervalTime=1000;
+		timerId = setInterval(getParameters,intervalTime);
+	  }
+	  let parameters = JSON.parse (reqGetParameters.response);
+      d.getElementById('AINVal').innerHTML = parameters.AINVal;
+      d.getElementById('DIN1State').innerHTML = parameters.DIN1State;
+      d.getElementById('DIN2State').innerHTML = parameters.DIN2State;
+      d.getElementById('DOUTState').innerHTML = parameters.DOUTState;
+	}
+  }
+  
+  try{
+    reqGetParameters.send(null);
+  }
+  catch(exception){
+    clearInterval(timerId);
+	intervalTime=8000;
+	timerId = setInterval(getParameters,intervalTime);
+  }
+}
 
 function checkFloat(arg_id){
   let element = d.getElementById(arg_id);
@@ -24,36 +59,9 @@ function checkFloat(arg_id){
   }
 }
 
-function checkDecUint16(arg_id){
-  let element = d.getElementById(arg_id);
-  let num = parseInt(element.value, 10);
-  if(num != num||num<0||num>65535){
-    element.classList.add('error-input-border');
-    element.classList.remove('correct-input-border');
-    return false;
-  }else{
-    element.classList.add('correct-input-border');
-    element.classList.remove('error-input-border');
-    return true;
-  }
-}
-
 function checkText(arg_id){
 let element = d.getElementById(arg_id);
   if(element.value==""){
-    element.classList.add('error-input-border');
-    element.classList.remove('correct-input-border');
-    return false;
-  }else{
-    element.classList.add('correct-input-border');
-    element.classList.remove('error-input-border');
-    return true;
-  }
-}
-
-function checkPASSWORD(arg_id){
-let element = d.getElementById(arg_id);
-  if(element.value==""||element.value.length<8){
     element.classList.add('error-input-border');
     element.classList.remove('correct-input-border');
     return false;
@@ -78,97 +86,79 @@ function checkSettings(){
   return result;
 }
 
-function checkIp(arg_id)
-{
-  let regexp=/^(?=\d+\.\d+\.\d+\.\d+$)(?:(?:25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])\.?){4}$/;
-  let element = d.getElementById(arg_id);
-  let result = regexp.test(element.value);
-  if(!result){
-    element.classList.add('error-input-border');
-    element.classList.remove('correct-input-border');
-   }else{
-    element.classList.add('correct-input-border');
-    element.classList.remove('error-input-border');
-  }
-  return result;
-}
-
-function getNetworkParameters(){
-  let reqGetSettings = new XMLHttpRequest();
-  reqGetSettings.open("GET","NetworkParameters.property?=",true);
-  reqGetSettings.timeout = 5000;
-  reqGetSettings.onreadystatechange = function(){
-    if(reqGetSettings.readyState != 4)return;
-    if(reqGetSettings.status != 200){
-	  alert(reqGetSettings.status==0?"Read parameters timeout":reqGetSettings.statusText);
-    }else{
-	  let settings = JSON.parse (reqGetSettings.response);
-      d.getElementById('ApSSID').value = settings.ApSSID;
-      d.getElementById('ApPASSWORD').value = settings.ApPASSWORD;
-      d.getElementById('ApIPAddress').value = settings.ApIPAddress;
-      d.getElementById('ApSubnetMask').value = settings.ApSubnetMask;
-      d.getElementById('ApGateway').value = settings.ApGateway;
-	  
-      d.getElementById('StSSID').value = settings.StSSID;
-      d.getElementById('StPASSWORD').value = settings.StPASSWORD;
-	  
-      d.getElementById('MQTTServer').value = settings.MQTTServer;
-      d.getElementById('MQTTPort').value = settings.MQTTPort;
-      d.getElementById('MQTTLogin').value = settings.MQTTLogin;
-      d.getElementById('MQTTPassword').value = settings.MQTTPassword;
-      d.getElementById('MQTTClientID').value = settings.MQTTClientID;
-      d.getElementById('MQTTPublishPeriod').value = settings.MQTTPublishPeriod;
+function getAINCoefficient(){
+  let request = new XMLHttpRequest();
+  request.open("GET","AINCoefficient.property?=",true);
+  request.timeout = 5000;
+  request.onreadystatechange = function(){
+    if(request.readyState != 4)return;
+    if(request.status != 200)alert(request.status==0?"Read AINCoefficient timeout":request.statusText);
+    else{
+	  let response = JSON.parse (request.response);
+      d.getElementById('AINCoefficient').value = response.AINCoefficient;
+	  getDOUTStateFormula();
 	}
   }
-  try{
-    reqGetSettings.send(null);
-  }
-  catch(exception){
-    alert(exception);
-  }
+  try{request.send(null);}
+  catch(exception){alert(exception);}
 }
 
-function setNetworkParameters(){
-  if(!checkSettings()){
+function getDOUTStateFormula(){
+  let request = new XMLHttpRequest();
+  request.open("GET","DOUTStateFormula.property?=",true);
+  request.timeout = 5000;
+  request.onreadystatechange = function(){
+    if(request.readyState != 4)return;
+    if(request.status != 200)alert(request.status==0?"Read DOUTStateFormula timeout":request.statusText);
+    else{
+	  let response = JSON.parse (request.response);
+      d.getElementById('DOUTStateFormula').value = response.DOUTStateFormula;
+	}
+  }
+  try{request.send(null);}
+  catch(exception){alert(exception);}
+}
+
+function setAINCoefficient(){
+  if(!checkFloat('AINCoefficient')()){
     alert("Settings input error.");
 	return;
-  }
-  
+  }  
   let settings ={
-    ApSSID: d.getElementById("ApSSID").value,
-    ApPASSWORD: d.getElementById("ApPASSWORD").value,
-    ApIPAddress: d.getElementById("ApIPAddress").value,
-    ApSubnetMask: d.getElementById("ApSubnetMask").value,
-    ApGateway: d.getElementById("ApGateway").value,
-	
-    StSSID: d.getElementById("StSSID").value,
-    StPASSWORD: d.getElementById("StPASSWORD").value,
-	
-    MQTTServer: d.getElementById("MQTTServer").value,
-    MQTTPort: d.getElementById("MQTTPort").value.toString(),
-    MQTTLogin: d.getElementById("MQTTLogin").value,
-    MQTTPassword: d.getElementById("MQTTPassword").value,
-    MQTTClientID: d.getElementById("MQTTClientID").value,
-    MQTTPublishPeriod: d.getElementById("MQTTPublishPeriod").value.toString(),
+    AINCoefficient: d.getElementById("AINCoefficient").value,
   };
   
-  let reqGetSettings = new XMLHttpRequest();
-  reqGetSettings.open("POST","NetworkParameters.property=",true);
-  reqGetSettings.timeout = 5000;
-  reqGetSettings.onreadystatechange = function(){
-    if(reqGetSettings.readyState != 4)return;
-    if(reqGetSettings.status != 200){
-	  alert(reqGetSettings.status==0?"Write parameters timeout":reqGetSettings.statusText);
-    }else{
-	  alert("Parameters were writed successfully.");
-	}
+  let request = new XMLHttpRequest();
+  request.open("POST","AINCoefficient.property",true);
+  request.timeout = 5000;
+  request.onreadystatechange = function(){
+    if(request.readyState != 4)return;
+    if(request.status != 200)alert(request.status==0?"Write AINCoefficient timeout":request.statusText);
+    else alert("AINCoefficient were writed successfully.");
   }
-  try{
-    reqGetSettings.send(JSON.stringify(settings));
+  try{request.send(JSON.stringify(settings));}
+  catch(exception){alert(exception);}
+}
+
+function setDOUTStateFormula(){
+  if(!checkText('DOUTStateFormula')()){
+    alert("Settings input error.");
+	return;
+  }  
+  let settings ={
+    DOUTStateFormula: d.getElementById("DOUTStateFormula").value,
+  };
+  
+  let request = new XMLHttpRequest();
+  request.open("POST","DOUTStateFormula.property",true);
+  request.timeout = 5000;
+  request.onreadystatechange = function(){
+    if(request.readyState != 4)return;
+    if(request.status != 200)alert(request.status==0?"Write DOUTStateFormula timeout":request.statusText);
+    else alert("DOUTStateFormula were writed successfully.");
   }
-  catch(exception){
-    alert(exception);
-  }
+  try{request.send(JSON.stringify(settings));}
+  catch(exception){alert(exception);}
 }
 
 function rebootDevice(){
@@ -196,7 +186,7 @@ function onMainPageLoad(){
 }
 </script>
 </head>
-<body><!-- onload="getNetworkParameters()"-->
+<body onload="getAINCoefficient()">
 <div class="container">
 <div class = "hBlock">
 	<input type="button" class="topButtons" value = "Network Parameters" onclick="location.href='Index.html'">
@@ -208,10 +198,20 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>Analog Input Value</label></div>
-		<div class = "hBlock"><input type="text" id="AINVal"></div><!-- oninput="checkIp('AINVal')"-->
+		<div class = "hBlock"><input type="text" id="AINVal"></div>
 	</div>
 	<div class = "vBlock"></div>
 </div>
+<div class = "hBlock">
+	<div class = "vBlock">
+		<div class = "hBlock"><label>Analog Input Coefficient</label></div>
+		<div class = "hBlock"><input type="text" id="AINCoefficient" oninput="checkFloat('AINCoefficient')"></div>
+	</div>
+	<div class = "vBlock"></div>
+</div>
+<div class = "hBlock">
+	<div class = "vBlock"><input type="button" value = "Save Coefficient" onclick="setAINCoefficient()"></div>
+</div>	
 <h3>Digital Inputs</h3>
 <div class = "hBlock">
 	<div class = "vBlock">
@@ -227,21 +227,20 @@ function onMainPageLoad(){
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>Digital Output State</label></div>
-		<div class = "hBlock"><input type="text" id="DOUTState"></div><!-- oninput="checkIp('ApIPAddress')"-->
+		<div class = "hBlock"><input type="text" id="DOUTState"></div>
 	</div>
 	<div class = "vBlock"></div>
 </div>
 <div class = "hBlock">
 	<div class = "vBlock">
 		<div class = "hBlock"><label>Digital Output State Formula</label></div>
-		<div class = "hBlock"><input type="text" id="DOUTStateFormula" oninput="checkText(DOUTStateFormula)"></div>
+		<div class = "hBlock"><input type="text" id="DOUTStateFormula" oninput="checkText('DOUTStateFormula')"></div>
 	</div>
 	<div class = "vBlock"></div>
 </div>
 <div class = "hBlock">
-	<div class = "vBlock">
-		<div class = "hBlock"><input type="button" value = "Save Formula"></div>
-	</div>
+	<div class = "vBlock"><input type="button" value = "Save Formula"  onclick="setDOUTStateFormula()"></div>	
+	<div class = "vBlock"><input type="button" value = "Reboot Device" onclick="rebootDevice()"></div>
 </div>	
 </div>
 </div>

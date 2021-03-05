@@ -9,8 +9,6 @@
 #include "TimeSpan.h"
 #include "PinsStateManager.h"
 #include "WebSite.h"
-#include "FsData.h"
-#include "FsFile.h"
 #include <ArduinoJson.h>
 
 static ESP8266WebServer* apServerPtr;
@@ -70,26 +68,6 @@ class HTTPServer
       apServer.onNotFound([](){
         apServerPtr->send(404, "text/plain", "404: Not found"); 
       });
-      /*apServer.on("/favicon.ico",[](){
-        apServerPtr->send(200, "image/x-icon", data_favicon_ico, sizeof(data_favicon_ico)); 
-      });*/
-      /*apServer.on("/",[](){
-        //if(!server.authenticate(www_username, www_password))
-        //return server.requestAuthentication();//        
-        struct fs_file file; 
-        fs_open(&file,"Index.html");
-        apServerPtr->send(200, "text/html", file.data, file.len); 
-      });
-      apServer.on("/style.css",[](){
-        struct fs_file file;
-        fs_open(&file,"style.css");
-        apServerPtr->send(200, "text/css",file.data, file.len); 
-      });
-      /*apServer.on("/favicon.ico",[](){
-        struct fs_file file;
-        fs_open(&file,"favicon.ico");
-        apServerPtr->send(200, "image/x-icon", file.data, file.len); 
-      });*/
       apServer.on("/NetworkParameters.property",HTTP_GET,[](){
         //---reading property---//
         File networkParameters;

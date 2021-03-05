@@ -190,6 +190,36 @@ class MemoryManager {
       networkParameters.close(); 
       return true;
     }
+
+    bool writeDefaultAINCoefficientToFile()
+    {
+      File ainCoefficient;
+      if(!(ainCoefficient = SPIFFS.open("/AINCoefficient.property", "w")))
+      {
+        #ifdef SERIAL_DEBUG_ENABLED
+          Serial.println("Failed to open AINCoefficient.property to write");
+        #endif
+        return false;
+      }
+      ainCoefficient.print("1.0"); 
+      ainCoefficient.close(); 
+      return true;
+    }
+
+    bool writeDefaultDOUTStateFormulaToFile()
+    {
+      File doutStateFormula;
+      if(!(doutStateFormula = SPIFFS.open("/DOUTStateFormula.property", "w")))
+      {
+        #ifdef SERIAL_DEBUG_ENABLED
+          Serial.println("Failed to open DOUTStateFormula.property to write");
+        #endif
+        return false;
+      }
+      doutStateFormula.print("0"); 
+      doutStateFormula.close(); 
+      return true;
+    }
     
 	  void begin()
     {     
@@ -217,10 +247,6 @@ class MemoryManager {
 
         if(!writeDefaultNetworkParametersToFile())return;
       }
-
-      #ifdef SERIAL_DEBUG_ENABLED
-      Serial.println("Success to open networkParameters.property");
-      #endif
       //size_t sent = server.streamFile(file, contentType);    // Send it to the client
       /*while (networkParameters.available()) {//int l = file.readBytesUntil('\n', buffer, sizeof(buffer));
       //Serial.print(networkParameters.read());  //����� �������� �� ������  0x00
@@ -252,11 +278,49 @@ class MemoryManager {
          writeDefaultNetworkParametersToFile();
        }
        else networkParameters.close();
+  
+       File ainCoefficient;
+       while(!(ainCoefficient = SPIFFS.open("/AINCoefficient.property", "r")))
+       {
+         #ifdef SERIAL_DEBUG_ENABLED
+           Serial.println("Failed to open AINCoefficient.property to read");
+         #endif
+
+         if(!writeDefaultAINCoefficientToFile())return;
+       }
+
+       if(readLineFromFile(&ainCoefficient,ainCoefficientStr/*networkProperty.apSSID*/)==0)
+       {
+         #ifdef SERIAL_DEBUG_ENABLED
+           Serial.println("AINCoefficient.property reading error, write default settings");
+         #endif
+         ainCoefficient.close();
+         writeDefaultAINCoefficientToFile();
+       }
+       else ainCoefficient.close();
+  
+       File doutStateFormula;
+       while(!(doutStateFormula = SPIFFS.open("/DOUTStateFormula.property", "r")))
+       {
+         #ifdef SERIAL_DEBUG_ENABLED
+           Serial.println("Failed to open DOUTStateFormula.property to read");
+         #endif
+
+         if(!writeDefaultDOUTStateFormulaToFile())return;
+       }
+
+       if(readLineFromFile(&doutStateFormula,doutStateFormulaStr/*networkProperty.apSSID*/)==0)
+       {
+         #ifdef SERIAL_DEBUG_ENABLED
+           Serial.println("DOUTStateFormula.property reading error, write default settings");
+         #endif
+         doutStateFormula.close();
+         writeDefaultDOUTStateFormulaToFile();
+       }
+       else doutStateFormula.close();
       /*readLineFromFile(&networkParameters,networkProperty.doutFormula);*/
   
-       
-
-      Serial.println(networkProperty.apSSID);
+        /*Serial.println(networkProperty.apSSID);
       Serial.println(networkProperty.apPassword);
       Serial.println(networkProperty.apIP);
       Serial.println(networkProperty.apSubnet);
@@ -268,11 +332,14 @@ class MemoryManager {
       Serial.println(networkProperty.mqttServer);
       Serial.println(networkProperty.mqttPort);
       Serial.println(networkProperty.mqttClientID);
-      Serial.println(networkProperty.mqttUser);//mqttPublishPollingPeriod
+      Serial.println(networkProperty.mqttUser);
       Serial.println(networkProperty.mqttPassword);
-      Serial.println(networkProperty.mqttPublishPollingPeriod);
+      Serial.println(networkProperty.mqttPublishPollingPeriod);*/
   
-      /*Serial.println(networkProperty.doutFormula);*/
+      Serial.println(ainCoefficientStr);
+      Serial.println(doutStateFormulaStr);
+
+      
 
       while(!(pemCA_cer = SPIFFS.open("/pemCA.cer", "r")))
       {
@@ -309,6 +376,8 @@ class MemoryManager {
     }
     
     NetworkProperty networkProperty;
+    char ainCoefficientStr[16];
+    char doutStateFormulaStr[32];
   private:
     File networkParameters;
     File pemCA_cer;
